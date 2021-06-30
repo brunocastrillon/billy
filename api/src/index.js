@@ -1,39 +1,69 @@
-//index.js
 const api = require('./application');
 const profitability = parseFloat(process.env.PROFITABILITY);
-const symbolTrading = process.env.SYMBOL;
+const paridade = process.env.SYMBOL;
 
 console.log('Iniciando monitoramento!');
+console.log('--- --- ---');
+
 setInterval(async () => {
-    //console.log(await api.exchangeInfo());
-    //console.log(await api.time());
-    console.log(`Mercado para ${symbolTrading}`);
-    const mercado = await api.depth(symbolTrading);
-    console.log(mercado.bids.length ? `Compra: ${mercado.bids[0][0]}` : 'Sem Compras');
-    console.log(mercado.asks.length ? `Venda: ${mercado.asks[0][0]}` : 'Sem Vendas');
+    const mercado = await api.informacaoMercado(paridade);
+    const compra = mercado.bids[0][0];
+    const venda = mercado.asks[0][0];
+    const carteira = await api.informacaoConta();
+    const saldo = carteira.balances.filter(b => paridade.indexOf(b.asset) !== -1);
+    const brl = parseFloat(saldo.find(c => c.asset.endsWith('BRL')).free);
+    const shib = parseFloat(saldo.find(c => c.asset.endsWith('SHIB')).free);
 
-    console.log('Carteira');
-    const carteira = await api.accountInfo();
-    const coins = carteira.balances.filter(b => symbolTrading.indexOf(b.asset) !== -1);
-    console.log(coins);
+    //console.log(await api.hora());
+    //console.log('--- --- ---');
+    //console.log('C O R R E T O R A');
+    //console.log(await api.informacaoCorretora(paridade));
+    //console.log('--- --- ---');
 
-    const sellPrice = parseFloat(mercado.asks[0][0]);
-    const carteiraUSD = parseFloat(coins.find(c => c.asset.endsWith('USD')).free);
-    if (sellPrice < 1000) {
-        console.log('Preço está bom. Verificando se tenho grana...');
-        if (sellPrice <= carteiraUSD) {
+    console.log('C A R T E I R A');
+    console.log(saldo);
+    console.log('--- --- ---');
+    console.log(`MERCADO PARA ===> ${paridade}`);
+    console.log('--- --- ---');
+    console.log(mercado.bids.length ? `COMPRA: ${compra}` : 'Sem Compras');
+    console.log(mercado.asks.length ? `VENDA: ${venda}` : 'Sem Vendas');
+    console.log('--- --- ---');
 
-            console.log('Tenho! Comprando!');
-            const buyOrder = await api.newOrder(symbolTrading, 1);
-            //console.log(buyOrder);//descomente para investigar problemas
-            console.log(`orderId: ${buyOrder.orderId}`);
-            console.log(`status: ${buyOrder.status}`);
+    if (shib == 0) {
+        console.log("sem shib, verificar se tem brl");
+        if (venda <= brl) {
+            console.log("tem brl, então verificar cotação");
+            if (venda < 0.00004040) {
+                console.log("preço bom, vou comprar");
 
-            console.log(`Posicionando venda. Ganho de ${profitability}`);
-            const sellOrder = await api.newOrder(symbolTrading, 1, sellPrice * profitability, 'SELL', 'LIMIT');
-            //console.log(sellOrder);//descomente para investigar problemas
-            console.log(`orderId: ${sellOrder.orderId}`);
-            console.log(`status: ${sellOrder.status}`);
+                //const ordemCompra = await api.novaOrdem(paridade, 100);
+            }            
         }
     }
+    else {
+        if(depreciou(profitability)){
+            console.log("compra!");
+        }
+
+        if(apreciou(profitability)){
+            console.log("vende!");
+        }
+    }
+
+
+    //     if (sellPrice <= carteiraUSD) {
+
+    //         console.log('Tenho! Comprando!');
+    //         const buyOrder = await api.newOrder(symbolTrading, 1);
+    //         //console.log(buyOrder);//descomente para investigar problemas
+    //         console.log(`orderId: ${buyOrder.orderId}`);
+    //         console.log(`status: ${buyOrder.status}`);
+
+    //         console.log(`Posicionando venda. Ganho de ${profitability}`);
+    //         const sellOrder = await api.newOrder(symbolTrading, 1, sellPrice * profitability, 'SELL', 'LIMIT');
+    //         //console.log(sellOrder);//descomente para investigar problemas
+    //         console.log(`orderId: ${sellOrder.orderId}`);
+    //         console.log(`status: ${sellOrder.status}`);
+    //     }
+    // }
 }, process.env.CRAWLER_INTERVAL);
