@@ -2,13 +2,13 @@ const api = require('./application');
 const profitability = parseFloat(process.env.PROFITABILITY);
 const paridade = process.env.SYMBOL;
 
-console.log('Iniciando monitoramento!');
+console.log('I N I C I A N D O  B I L L Y !');
 console.log('--- --- ---');
 
 setInterval(async () => {
     const mercado = await api.informacaoMercado(paridade);
-    const compra = mercado.bids[0][0];
-    const venda = mercado.asks[0][0];
+    const compraPreco = mercado.bids[0][0];
+    const vendaPreco = mercado.asks[0][0];
     const carteira = await api.informacaoConta();
     const saldo = carteira.balances.filter(b => paridade.indexOf(b.asset) !== -1);
     const brl = parseFloat(saldo.find(c => c.asset.endsWith('BRL')).free);
@@ -25,45 +25,50 @@ setInterval(async () => {
     console.log('--- --- ---');
     console.log(`MERCADO PARA ===> ${paridade}`);
     console.log('--- --- ---');
-    console.log(mercado.bids.length ? `COMPRA: ${compra}` : 'Sem Compras');
-    console.log(mercado.asks.length ? `VENDA: ${venda}` : 'Sem Vendas');
+    console.log(mercado.bids.length ? `COMPRA: ${compraPreco}` : 'Sem Compras');
+    console.log(mercado.asks.length ? `VENDA: ${vendaPreco}` : 'Sem Vendas');
     console.log('--- --- ---');
 
-    if (shib == 0) {
-        console.log("sem shib, verificar se tem brl");
-        if (venda <= brl) {
-            console.log("tem brl, então verificar cotação");
-            if (venda < 0.00004040) {
-                console.log("preço bom, vou comprar");
+    if (brl > 600.00000000) {
+        if (shib == 0) {
+            console.log("sem shib, verificar se tem brl");
+            if (vendaPreco <= brl) {
+                console.log("tem brl, então verificar cotação");
+                if (vendaPreco < 0.00003425) {
+                    console.log("preço bom, vou comprar");
 
-                //const ordemCompra = await api.novaOrdem(paridade, 100);
-            }            
+                    const ordemCompra = await api.novaOrdem('BUY', 'MARKET', paridade, 300000);
+                    console.log(`Ordem: ${ordemCompra.orderId}`);
+                    console.log(`Status: ${ordemCompra.status}`);
+
+                    console.log('--- --- ---');
+                    console.log("POSICIONANDO VENDA:");
+                    console.log('--- --- ---');
+
+                    const ordemVenda = await api.novaOrdem('SELL', 'LIMIT', paridade, shib, vendaPreco * profitability);
+                    console.log(`Ordem: ${ordemVenda.orderId}`);
+                    console.log(`Status: ${ordemVenda.status}`);
+                }
+            }
         }
+        else {
+            if (vendaPreco > 0.00003455) {
+                console.log("preço bom, vou vender");
+
+                const ordemVenda = await api.novaOrdem('SELL', 'MARKET', paridade, shib);
+                console.log(`Ordem: ${ordemVenda.orderId}`);
+                console.log(`Status: ${ordemVenda.status}`);
+            }
+        }
+
     }
-    else {
-        if(depreciou(profitability)){
-            console.log("compra!");
-        }
-
-        if(apreciou(profitability)){
-            console.log("vende!");
-        }
-    }
-
-
-    //     if (sellPrice <= carteiraUSD) {
-
-    //         console.log('Tenho! Comprando!');
-    //         const buyOrder = await api.newOrder(symbolTrading, 1);
-    //         //console.log(buyOrder);//descomente para investigar problemas
-    //         console.log(`orderId: ${buyOrder.orderId}`);
-    //         console.log(`status: ${buyOrder.status}`);
-
-    //         console.log(`Posicionando venda. Ganho de ${profitability}`);
-    //         const sellOrder = await api.newOrder(symbolTrading, 1, sellPrice * profitability, 'SELL', 'LIMIT');
-    //         //console.log(sellOrder);//descomente para investigar problemas
-    //         console.log(`orderId: ${sellOrder.orderId}`);
-    //         console.log(`status: ${sellOrder.status}`);
-    //     }
-    // }
 }, process.env.CRAWLER_INTERVAL);
+
+// 1.000.000 shib *  0.00003436(preço) = R$ 34,36
+
+//0.00003436(preço) + 30% =  0,000010308
+//0.00003436(preço) + 3% =  0,0000010308
+
+
+// 0.000044629
+// 0.00004466800000000001

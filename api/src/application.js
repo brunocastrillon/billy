@@ -14,8 +14,8 @@ async function hora() {
 async function informacaoCorretora(paridade) {
     const resultado = await chamadaPublica('/v3/exchangeInfo');
     return paridade ?
-           resultado.symbols.find(s => s.symbol === paridade) :
-           resultado.symbols;
+        resultado.symbols.find(s => s.symbol === paridade) :
+        resultado.symbols;
 }
 
 async function informacaoMercado(symbol = symbolTrading, limit = 5) {
@@ -66,19 +66,20 @@ async function chamadaPublica(path, data, method = 'GET', headers = {}) {
     }
 }
 
-// async function newOrder(symbol, quantity, price, side = 'BUY', type = 'MARKET') {
-//     const data = { symbol, side, type, quantity };
+async function novaOrdem(side, type, symbol, quantity, price) {
+    const data = { symbol, side, type, quantity };
 
-//     if (price) data.price = parseInt(price);
-//     if (type === 'LIMIT') data.timeInForce = 'GTC';
+    if (price) data.price = parseInt(price);
+    if (type === 'LIMIT') data.timeInForce = 'GTC'; // Good 'till Cancelled (válida até cancelar)
 
-//     return privateCall('/v3/order', data, 'POST');
-// }
+    //console.log(data);
+    return chamadaPrivada('/v3/order', data, 'POST');
+}
 
 module.exports = {
     hora,
     informacaoCorretora,
     informacaoMercado,
-    informacaoConta
-    //newOrder
+    informacaoConta,
+    novaOrdem
 }
